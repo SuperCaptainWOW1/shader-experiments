@@ -131,20 +131,20 @@ async function start() {
 
 async function getFireMaterial() {
   const fireTexture = await textureLoader.loadAsync(
-    "src/assets/noise-textures/fire.png",
+    "noise-textures/fire.png",
   );
   fireTexture.colorSpace = SRGBColorSpace;
   fireTexture.wrapS = RepeatWrapping;
   fireTexture.wrapT = RepeatWrapping;
 
   const noiseTexture = await textureLoader.loadAsync(
-    "src/assets/noise-textures/noise_small.png",
+    "noise-textures/noise_small.png",
   );
   noiseTexture.wrapS = RepeatWrapping;
   noiseTexture.wrapT = RepeatWrapping;
 
   const alphaErosionTexture = await textureLoader.loadAsync(
-    "src/assets/noise-textures/lichen.jpg",
+    "noise-textures/lichen.jpg",
   );
   alphaErosionTexture.wrapS = RepeatWrapping;
   alphaErosionTexture.wrapT = RepeatWrapping;
@@ -170,14 +170,14 @@ async function getExplosionMaterial() {
   };
 
   const noiseTexture = await textureLoader.loadAsync(
-    "src/assets/noise-textures/milky10.png",
+    "noise-textures/milky10.png",
   );
   noiseTexture.colorSpace = SRGBColorSpace;
   noiseTexture.wrapS = RepeatWrapping;
   noiseTexture.wrapT = RepeatWrapping;
 
   const vertexNoiseTexture = await textureLoader.loadAsync(
-    "src/assets/noise-textures/perlin23.png",
+    "noise-textures/perlin23.png",
   );
   vertexNoiseTexture.colorSpace = SRGBColorSpace;
   vertexNoiseTexture.wrapS = RepeatWrapping;
