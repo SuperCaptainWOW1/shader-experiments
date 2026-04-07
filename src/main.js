@@ -95,7 +95,7 @@ async function start() {
   const sphere = new Mesh(new SphereGeometry(), explosionShaderMaterial);
   scene.add(sphere);
 
-  const plane = new Mesh(new PlaneGeometry(), smokeShaderMaterial);
+  const plane = new Mesh(new PlaneGeometry(2, 2), smokeShaderMaterial);
   plane.lookAt(camera.position);
   scene.add(plane);
 
@@ -118,8 +118,8 @@ async function start() {
         smokeShaderMaterial.visible = true;
       },
       onComplete: () => {
-        explosionShaderMaterial.visible = false;
-        smokeShaderMaterial.visible = false;
+        // explosionShaderMaterial.visible = false;
+        // smokeShaderMaterial.visible = false;
       },
     },
   );
@@ -228,6 +228,13 @@ async function getSmokeMaterial() {
     speed: 1.5,
   };
 
+  const noiseTexture = await textureLoader.loadAsync(
+    "noise-textures/perlin10.png",
+  );
+  noiseTexture.colorSpace = SRGBColorSpace;
+  noiseTexture.wrapS = RepeatWrapping;
+  noiseTexture.wrapT = RepeatWrapping;
+
   const shaderMaterial = new ShaderMaterial({
     vertexShader: smokeVertexShader,
     fragmentShader: smokeFragmentShader,
@@ -240,6 +247,7 @@ async function getSmokeMaterial() {
       uColor: new Uniform(new Color("#dda965")),
       uColorIntensity: new Uniform(20),
       uSpeed: new Uniform(1),
+      uNoiseTexture: new Uniform(noiseTexture)
     },
     visible: false,
   });
