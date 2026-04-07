@@ -8,6 +8,8 @@ const gui = new Pane({
 // gui.registerPlugin(EssentialsPlugin);
 
 gui.element.style.marginTop = "40px";
+gui.element.style.overflowY = "auto";
+gui.element.style.maxHeight = "calc(100vh - 80px)";
 gui.element.parentElement.style.width = "350px";
 
 export default gui;

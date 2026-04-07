@@ -31,6 +31,81 @@ const animationOptions = {
   duration: 1,
 };
 
+const arcOptions = [
+  {
+    enabled: true,
+    length: 45.0,
+    radius: 0.2,
+    thickness: 0.005,
+    rotation: 7.0,
+    speed: 0.58,
+    startingRadius: 0.11,
+  },
+  {
+    enabled: true,
+    length: 47.0,
+    radius: 0.2,
+    thickness: 0.006,
+    rotation: 40.0,
+    speed: 0.6,
+    startingRadius: 0.07,
+  },
+  {
+    enabled: true,
+    length: 42.0,
+    radius: 0.2,
+    thickness: 0.0025,
+    rotation: 98.0,
+    speed: 0.54,
+    startingRadius: 0.1,
+  },
+  {
+    enabled: true,
+    length: 40.0,
+    radius: 0.2,
+    thickness: 0.0022,
+    rotation: 126.0,
+    speed: 0.4,
+    startingRadius: 0.14,
+  },
+  {
+    enabled: true,
+    length: 38.0,
+    radius: 0.2,
+    thickness: 0.002,
+    rotation: 188.0,
+    speed: 0.46,
+    startingRadius: 0.12,
+  },
+  {
+    enabled: true,
+    length: 49.0,
+    radius: 0.2,
+    thickness: 0.0055,
+    rotation: 231.0,
+    speed: 0.65,
+    startingRadius: 0.08,
+  },
+  {
+    enabled: true,
+    length: 51.0,
+    radius: 0.2,
+    thickness: 0.0062,
+    rotation: 266.0,
+    speed: 0.58,
+    startingRadius: 0.06,
+  },
+  {
+    enabled: true,
+    length: 42.0,
+    radius: 0.2,
+    thickness: 0.004,
+    rotation: 319.0,
+    speed: 0.42,
+    startingRadius: 0.09,
+  },
+];
+
 const textureLoader = new TextureLoader();
 
 async function start() {
@@ -130,9 +205,7 @@ async function start() {
 }
 
 async function getFireMaterial() {
-  const fireTexture = await textureLoader.loadAsync(
-    "noise-textures/fire.png",
-  );
+  const fireTexture = await textureLoader.loadAsync("noise-textures/fire.png");
   fireTexture.colorSpace = SRGBColorSpace;
   fireTexture.wrapS = RepeatWrapping;
   fireTexture.wrapT = RepeatWrapping;
@@ -247,7 +320,14 @@ async function getSmokeMaterial() {
       uColor: new Uniform(new Color("#dda965")),
       uColorIntensity: new Uniform(20),
       uSpeed: new Uniform(1),
-      uNoiseTexture: new Uniform(noiseTexture)
+      uNoiseTexture: new Uniform(noiseTexture),
+      uArcLength: new Uniform(arcOptions.map((a) => a.length)),
+      uArcRadius: new Uniform(arcOptions.map((a) => a.radius)),
+      uArcThickness: new Uniform(arcOptions.map((a) => a.thickness)),
+      uArcRotation: new Uniform(arcOptions.map((a) => a.rotation)),
+      uArcSpeed: new Uniform(arcOptions.map((a) => a.speed)),
+      uArcStartingRadius: new Uniform(arcOptions.map((a) => a.startingRadius)),
+      uArcEnabled: new Uniform(arcOptions.map((a) => (a.enabled ? 1.0 : 0.0))),
     },
     visible: false,
   });
@@ -281,6 +361,85 @@ async function getSmokeMaterial() {
     .on("change", () => {
       shaderMaterial.uniforms.uSpeed.value = options.speed;
     });
+
+  const syncArcUniforms = (i) => {
+    shaderMaterial.uniforms.uArcEnabled.value[i] = arcOptions[i].enabled
+      ? 1.0
+      : 0.0;
+    shaderMaterial.uniforms.uArcLength.value[i] = arcOptions[i].length;
+    shaderMaterial.uniforms.uArcRadius.value[i] = arcOptions[i].radius;
+    shaderMaterial.uniforms.uArcThickness.value[i] = arcOptions[i].thickness;
+    shaderMaterial.uniforms.uArcRotation.value[i] = arcOptions[i].rotation;
+    shaderMaterial.uniforms.uArcSpeed.value[i] = arcOptions[i].speed;
+    shaderMaterial.uniforms.uArcStartingRadius.value[i] =
+      arcOptions[i].startingRadius;
+  };
+
+  for (let i = 0; i < 8; i++) {
+    const arcFolder = gui.addFolder({
+      title: `Arc ${i + 1}`,
+    });
+
+    arcFolder
+      .addBinding(arcOptions[i], "enabled", {
+        label: "Enabled",
+      })
+      .on("change", () => syncArcUniforms(i));
+
+    arcFolder
+      .addBinding(arcOptions[i], "length", {
+        label: "Length (degrees)",
+        min: 0,
+        max: 360,
+        step: 1,
+      })
+      .on("change", () => syncArcUniforms(i));
+
+    arcFolder
+      .addBinding(arcOptions[i], "radius", {
+        label: "Radius",
+        min: 0,
+        max: 1,
+        step: 0.01,
+      })
+      .on("change", () => syncArcUniforms(i));
+
+    arcFolder
+      .addBinding(arcOptions[i], "thickness", {
+        label: "Thickness",
+        min: 0,
+        max: 0.015,
+        step: 0.0001,
+      })
+      .on("change", () => syncArcUniforms(i));
+
+    arcFolder
+      .addBinding(arcOptions[i], "rotation", {
+        label: "Rotation (degrees)",
+        min: 0,
+        max: 360,
+        step: 1,
+      })
+      .on("change", () => syncArcUniforms(i));
+
+    arcFolder
+      .addBinding(arcOptions[i], "speed", {
+        label: "Speed",
+        min: 0,
+        max: 5,
+        step: 0.01,
+      })
+      .on("change", () => syncArcUniforms(i));
+
+    arcFolder
+      .addBinding(arcOptions[i], "startingRadius", {
+        label: "Starting radius",
+        min: 0,
+        max: 0.5,
+        step: 0.01,
+      })
+      .on("change", () => syncArcUniforms(i));
+  }
 
   return shaderMaterial;
 }
