@@ -1,8 +1,9 @@
-const float vertexOffsetStrength = 0.3;
-const float explosionDuration = 0.1;
+// const float vertexOffsetStrength = 3.0;
+const float explosionDuration = 0.2;
 
 uniform float uTime;
 uniform float uProgress;
+uniform float uVertexOffsetStrength;
 uniform sampler2D uVertexNoiseTexture;
 
 out vec2 vUv;
@@ -26,7 +27,7 @@ void main() {
   vec3 modifiedPosition = 
     position 
     // Use normal to move vertices in the normal facing directions
-    + normal * (vertexNoiseTexture.r * vertexOffsetStrength)
+    + normal * ((vertexNoiseTexture.r) * uVertexOffsetStrength)
     // Increase offset effect with time
     * explosionProgress;
 

@@ -1,4 +1,5 @@
 uniform float uTime;
+uniform vec2 uErosionTimeFactor;
 uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform sampler2D uNoiseTexture;
@@ -36,6 +37,8 @@ void main() {
 
   vec2 erosionUv = vUv;
   erosionUv *= 0.2;
+  erosionUv.x += uTime * uErosionTimeFactor.x;
+  erosionUv.y += uTime * uErosionTimeFactor.y;
   vec4 erosionTexture = texture2D(uErosionTexture, erosionUv);
 
   float erosionAlpha = step(vErosionProgress, erosionTexture.r) * isExplosionEnded;

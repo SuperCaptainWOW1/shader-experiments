@@ -13,6 +13,7 @@ import {
   TextureLoader,
   Timer,
   Uniform,
+  Vector2,
   WebGLRenderer,
 } from "three";
 import gsap from "gsap";
@@ -27,8 +28,9 @@ import smokeVertexShader from "./shaders/smoke/vertex.glsl";
 import smokeFragmentShader from "./shaders/smoke/fragment.glsl";
 import gui from "./gui";
 
-const animationOptions = {
+const generalOptions = {
   duration: 1,
+  smokeScale: 1.25,
 };
 
 const arcOptions = [
@@ -108,6 +110,8 @@ const arcOptions = [
 
 const textureLoader = new TextureLoader();
 
+let smokePlane, explosionSphere;
+
 async function start() {
   const renderer = new WebGLRenderer({
     powerPreference: "high-performance",
@@ -134,13 +138,13 @@ async function start() {
   const timer = new Timer();
 
   gui
-    .addBinding(animationOptions, "duration", {
+    .addBinding(generalOptions, "duration", {
       label: "Effect duration",
       min: 0,
       max: 5,
     })
     .on("change", () => {
-      tween.duration(animationOptions.duration);
+      tween.duration(generalOptions.duration);
     });
 
   const explosionShaderMaterial = await getExplosionMaterial();
@@ -167,12 +171,13 @@ async function start() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  const sphere = new Mesh(new SphereGeometry(), explosionShaderMaterial);
-  scene.add(sphere);
+  explosionSphere = new Mesh(new SphereGeometry(), explosionShaderMaterial);
+  scene.add(explosionSphere);
 
-  const plane = new Mesh(new PlaneGeometry(2, 2), smokeShaderMaterial);
-  plane.lookAt(camera.position);
-  scene.add(plane);
+  smokePlane = new Mesh(new PlaneGeometry(2, 2), smokeShaderMaterial);
+  smokePlane.lookAt(camera.position);
+  smokePlane.scale.setScalar(generalOptions.smokeScale);
+  scene.add(smokePlane);
 
   const tween = gsap.fromTo(
     [
@@ -183,7 +188,7 @@ async function start() {
       value: 0,
     },
     {
-      value: animationOptions.duration,
+      value: generalOptions.duration,
 
       ease: "none",
       duration: 1,
@@ -193,8 +198,8 @@ async function start() {
         smokeShaderMaterial.visible = true;
       },
       onComplete: () => {
-        // explosionShaderMaterial.visible = false;
-        // smokeShaderMaterial.visible = false;
+        explosionShaderMaterial.visible = false;
+        smokeShaderMaterial.visible = false;
       },
     },
   );
@@ -240,21 +245,14 @@ async function getExplosionMaterial() {
   const options = {
     color1: "#f7721a",
     color2: "#dda965",
+    vertexOffsetStrength: 1.5,
+    erosionTimeFactor: new Vector2(),
+    vertexOffsetTexture: "grainy11.png",
   };
 
-  const noiseTexture = await textureLoader.loadAsync(
-    "noise-textures/milky10.png",
-  );
-  noiseTexture.colorSpace = SRGBColorSpace;
-  noiseTexture.wrapS = RepeatWrapping;
-  noiseTexture.wrapT = RepeatWrapping;
-
-  const vertexNoiseTexture = await textureLoader.loadAsync(
-    "noise-textures/perlin23.png",
-  );
-  vertexNoiseTexture.colorSpace = SRGBColorSpace;
-  vertexNoiseTexture.wrapS = RepeatWrapping;
-  vertexNoiseTexture.wrapT = RepeatWrapping;
+  const noiseTexture = await getNoiseTexture("milky10.png");
+  const vertexNoiseTexture = await getNoiseTexture("grainy2.png");
+  const erosionTexture = await getNoiseTexture("perlin23.png");
 
   const shaderMaterial = new ShaderMaterial({
     vertexShader: explosionVertexShader,
@@ -264,8 +262,11 @@ async function getExplosionMaterial() {
     uniforms: {
       uTime: new Uniform(0),
       uProgress: new Uniform(0),
+      uErosionTimeFactor: new Uniform(options.erosionTimeFactor),
       uNoiseTexture: new Uniform(noiseTexture),
       uVertexNoiseTexture: new Uniform(vertexNoiseTexture),
+      uVertexOffsetStrength: new Uniform(options.vertexOffsetStrength),
+      uErosionTexture: new Uniform(erosionTexture),
       uColor1: new Uniform(new Color(options.color1)),
       uColor2: new Uniform(new Color(options.color2)),
     },
@@ -290,6 +291,81 @@ async function getExplosionMaterial() {
     .on("change", () => {
       shaderMaterial.uniforms.uColor2.value = new Color(options.color2);
     });
+  guiFolder
+    .addBinding(options, "vertexOffsetStrength", {
+      label: "Vertex offset strength",
+      min: 0,
+      max: 10,
+      step: 0.1,
+    })
+    .on("change", () => {
+      shaderMaterial.uniforms.uVertexOffsetStrength.value =
+        options.vertexOffsetStrength;
+    });
+  guiFolder
+    .addBinding(options.erosionTimeFactor, "x", {
+      label: "X erosion time factor",
+      min: 0,
+      max: 2,
+      step: 0.1,
+    })
+    .on("change", () => {
+      shaderMaterial.uniforms.uErosionTimeFactor.x =
+        options.erosionTimeFactor.x;
+    });
+  guiFolder
+    .addBinding(options.erosionTimeFactor, "y", {
+      label: "Y erosion time factor",
+      min: 0,
+      max: 2,
+      step: 0.1,
+    })
+    .on("change", () => {
+      shaderMaterial.uniforms.uErosionTimeFactor.y =
+        options.erosionTimeFactor.y;
+    });
+  guiFolder
+    .addBinding(options, "vertexOffsetTexture", {
+      options: {
+        blue_noise: "blue_noise.png",
+        cracks10: "cracks10.png",
+        craters3: "craters3.png",
+        craters5: "craters5.png",
+        craters7: "craters7.png",
+        craters9: "craters9.png",
+        craters12: "craters12.png",
+        gabor1: "gabor1.png",
+        gabor6: "gabor6.png",
+        gabor11: "gabor11.png",
+        gabor12: "gabor12.png",
+        grainy2: "grainy2.png",
+        grainy11: "grainy11.png",
+        lichen: "lichen.jpg",
+        marble1: "marble1.png",
+        marble6: "marble6.png",
+        marble11: "marble11.png",
+        melt1: "melt1.png",
+        milky6: "milky6.png",
+        milky7: "milky7.png",
+        milky10: "milky10.png",
+        noise_medium: "noise_medium.png",
+        noise_small: "noise_small.png",
+        pebbles: "pebbles.png",
+        perlin3: "perlin3.png",
+        perlin10: "perlin10.png",
+        perlin18: "perlin18.png",
+        perlin23: "perlin23.png",
+        pixelated: "pixelated.png",
+        rgba_noise_medium: "rgba_noise_medium.png",
+        rgba_noise_small: "rgba_noise_small.png",
+        smoke: "smoke.jpg",
+      },
+    })
+    .on("change", async () => {
+      shaderMaterial.uniforms.uVertexNoiseTexture.value = await getNoiseTexture(
+        options.vertexOffsetTexture,
+      );
+    });
 
   return shaderMaterial;
 }
@@ -299,14 +375,10 @@ async function getSmokeMaterial() {
     color: "#dda965",
     colorIntensity: 20,
     speed: 1.5,
+    scale: 1.25,
   };
 
-  const noiseTexture = await textureLoader.loadAsync(
-    "noise-textures/perlin10.png",
-  );
-  noiseTexture.colorSpace = SRGBColorSpace;
-  noiseTexture.wrapS = RepeatWrapping;
-  noiseTexture.wrapT = RepeatWrapping;
+  const noiseTexture = await getNoiseTexture("perlin10.png");
 
   const shaderMaterial = new ShaderMaterial({
     vertexShader: smokeVertexShader,
@@ -360,6 +432,17 @@ async function getSmokeMaterial() {
     })
     .on("change", () => {
       shaderMaterial.uniforms.uSpeed.value = options.speed;
+    });
+
+  guiFolder
+    .addBinding(generalOptions, "smokeScale", {
+      label: "Scale",
+      min: 0,
+      max: 5,
+      step: 0.01,
+    })
+    .on("change", () => {
+      smokePlane.scale.setScalar(options.scale);
     });
 
   const syncArcUniforms = (i) => {
@@ -442,6 +525,15 @@ async function getSmokeMaterial() {
   }
 
   return shaderMaterial;
+}
+
+async function getNoiseTexture(name) {
+  const noiseTexture = await textureLoader.loadAsync(`noise-textures/${name}`);
+  noiseTexture.colorSpace = SRGBColorSpace;
+  noiseTexture.wrapS = RepeatWrapping;
+  noiseTexture.wrapT = RepeatWrapping;
+
+  return noiseTexture;
 }
 
 start();
