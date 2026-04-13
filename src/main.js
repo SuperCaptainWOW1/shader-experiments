@@ -110,7 +110,7 @@ const arcOptions = [
 
 const textureLoader = new TextureLoader();
 
-let smokePlane, explosionSphere;
+let smokePlane, explosionPlane;
 
 async function start() {
   const renderer = new WebGLRenderer({
@@ -171,10 +171,11 @@ async function start() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  explosionSphere = new Mesh(new SphereGeometry(), explosionShaderMaterial);
-  scene.add(explosionSphere);
+  explosionPlane = new Mesh(new PlaneGeometry(4, 4), explosionShaderMaterial);
+  explosionPlane.lookAt(camera.position);
+  scene.add(explosionPlane);
 
-  smokePlane = new Mesh(new PlaneGeometry(2, 2), smokeShaderMaterial);
+  smokePlane = new Mesh(new PlaneGeometry(1, 1), smokeShaderMaterial);
   smokePlane.lookAt(camera.position);
   smokePlane.scale.setScalar(generalOptions.smokeScale);
   scene.add(smokePlane);
@@ -207,38 +208,6 @@ async function start() {
   window.addEventListener("click", () => {
     tween.play(0);
   });
-}
-
-async function getFireMaterial() {
-  const fireTexture = await textureLoader.loadAsync("noise-textures/fire.png");
-  fireTexture.colorSpace = SRGBColorSpace;
-  fireTexture.wrapS = RepeatWrapping;
-  fireTexture.wrapT = RepeatWrapping;
-
-  const noiseTexture = await textureLoader.loadAsync(
-    "noise-textures/noise_small.png",
-  );
-  noiseTexture.wrapS = RepeatWrapping;
-  noiseTexture.wrapT = RepeatWrapping;
-
-  const alphaErosionTexture = await textureLoader.loadAsync(
-    "noise-textures/lichen.jpg",
-  );
-  alphaErosionTexture.wrapS = RepeatWrapping;
-  alphaErosionTexture.wrapT = RepeatWrapping;
-
-  const shaderMaterial = new ShaderMaterial({
-    vertexShader: fireVertexShader,
-    fragmentShader: fireFragmentShader,
-    uniforms: {
-      uTime: new Uniform(0),
-      uTexture: new Uniform(fireTexture),
-      uNoiseTexture: new Uniform(noiseTexture),
-      uAlphaErosionTexture: new Uniform(alphaErosionTexture),
-    },
-  });
-
-  return shaderMaterial;
 }
 
 async function getExplosionMaterial() {
