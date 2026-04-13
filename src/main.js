@@ -310,7 +310,7 @@ async function getExplosionMaterial() {
       step: 0.1,
     })
     .on("change", () => {
-      shaderMaterial.uniforms.uErosionTimeFactor.x =
+      shaderMaterial.uniforms.uErosionTimeFactor.value.x =
         options.erosionTimeFactor.x;
     });
   guiFolder
@@ -321,7 +321,7 @@ async function getExplosionMaterial() {
       step: 0.1,
     })
     .on("change", () => {
-      shaderMaterial.uniforms.uErosionTimeFactor.y =
+      shaderMaterial.uniforms.uErosionTimeFactor.value.y =
         options.erosionTimeFactor.y;
     });
   guiFolder
