@@ -1,6 +1,8 @@
 import "./style.css";
 import {
   AdditiveBlending,
+  CircleGeometry,
+  ClampToEdgeWrapping,
   Color,
   Mesh,
   PerspectiveCamera,
@@ -17,20 +19,25 @@ import {
   WebGLRenderer,
 } from "three";
 import gsap from "gsap";
-
-import fireVertexShader from "./shaders/fire/vertex.glsl";
-import fireFragmentShader from "./shaders/fire/fragment.glsl";
+import gui from "./gui";
+import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 import explosionVertexShader from "./shaders/explosion/vertex.glsl";
 import explosionFragmentShader from "./shaders/explosion/fragment.glsl";
 
+import explosionPlaneVertexShader from "./shaders/explosion-plane/vertex.glsl";
+import explosionPlaneFragmentShader from "./shaders/explosion-plane/fragment.glsl";
+
+import sparksVertexShader from "./shaders/sparks/vertex.glsl";
+import sparksFragmentShader from "./shaders/sparks/fragment.glsl";
+
 import smokeVertexShader from "./shaders/smoke/vertex.glsl";
 import smokeFragmentShader from "./shaders/smoke/fragment.glsl";
-import gui from "./gui";
 
 const generalOptions = {
-  duration: 1,
+  duration: 0.5,
   smokeScale: 1.25,
+  controlsEnabled: false,
 };
 
 const arcOptions = [
@@ -129,7 +136,7 @@ async function start() {
     0.01,
     2000,
   );
-  camera.position.z = 8;
+  camera.position.z = 4;
 
   const scene = new Scene();
   scene.background = new Color("#212121");
@@ -147,19 +154,24 @@ async function start() {
       tween.duration(generalOptions.duration);
     });
 
-  const explosionShaderMaterial = await getExplosionMaterial();
-  const smokeShaderMaterial = await getSmokeMaterial();
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enabled = generalOptions.controlsEnabled;
 
-  // const controls = new OrbitControls(camera, renderer.domElement);
+  gui.addBinding(generalOptions, "controlsEnabled").on("change", () => {
+    controls.enabled = generalOptions.controlsEnabled;
+  });
+
+  const explosionShaderMaterial = await getExplosionPlaneMaterial();
+  // const smokeShaderMaterial = await getSmokeMaterial();
 
   renderer.setAnimationLoop((t) => {
     timer.update(t);
-    // controls.update(t);
+    controls.update(t);
 
     explosionShaderMaterial.uniforms.uTime.value = timer.getElapsed();
     explosionShaderMaterial.needsUpdate = true;
-    smokeShaderMaterial.uniforms.uTime.value = timer.getElapsed();
-    smokeShaderMaterial.needsUpdate = true;
+    // smokeShaderMaterial.uniforms.uTime.value = timer.getElapsed();
+    // smokeShaderMaterial.needsUpdate = true;
 
     renderer.render(scene, camera);
   });
@@ -171,36 +183,34 @@ async function start() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  explosionPlane = new Mesh(new PlaneGeometry(4, 4), explosionShaderMaterial);
+  explosionPlane = new Mesh(new PlaneGeometry(), explosionShaderMaterial);
   explosionPlane.lookAt(camera.position);
   scene.add(explosionPlane);
 
-  smokePlane = new Mesh(new PlaneGeometry(1, 1), smokeShaderMaterial);
-  smokePlane.lookAt(camera.position);
-  smokePlane.scale.setScalar(generalOptions.smokeScale);
-  scene.add(smokePlane);
+  // smokePlane = new Mesh(new PlaneGeometry(1, 1), smokeShaderMaterial);
+  // smokePlane.lookAt(camera.position);
+  // smokePlane.scale.setScalar(generalOptions.smokeScale);
+  // scene.add(smokePlane);
 
   const tween = gsap.fromTo(
     [
       explosionShaderMaterial.uniforms.uProgress,
-      smokeShaderMaterial.uniforms.uProgress,
+      // smokeShaderMaterial.uniforms.uProgress,
     ],
     {
       value: 0,
     },
     {
-      value: generalOptions.duration,
+      value: 1,
 
       ease: "none",
-      duration: 1,
+      duration: generalOptions.duration,
 
       onStart: () => {
         explosionShaderMaterial.visible = true;
-        smokeShaderMaterial.visible = true;
       },
       onComplete: () => {
         explosionShaderMaterial.visible = false;
-        smokeShaderMaterial.visible = false;
       },
     },
   );
@@ -492,6 +502,50 @@ async function getSmokeMaterial() {
       })
       .on("change", () => syncArcUniforms(i));
   }
+
+  return shaderMaterial;
+}
+
+async function getExplosionPlaneMaterial() {
+  const options = {
+    color1: "#6b0503",
+    color2: "#ffcb00",
+    vertexOffsetStrength: 1.5,
+    erosionTimeFactor: new Vector2(),
+    vertexOffsetTexture: "perlin23.png",
+    noiseTexture: "milky10.png",
+    erosionTexture: "perlin23.png",
+  };
+
+  getNoiseTexture("spark3.png").then(
+    (texture) => (shaderMaterial.uniforms.uNoiseTexture.value = texture),
+  );
+  // getNoiseTexture("perlin23.png").then(
+  //   (texture) => (shaderMaterial.uniforms.uVertexNoiseTexture.value = texture),
+  // );
+  // getNoiseTexture("perlin23.png").then(
+  //   (texture) => (shaderMaterial.uniforms.uErosionTexture.value = texture),
+  // );
+
+  const shaderMaterial = new ShaderMaterial({
+    vertexShader: sparksVertexShader,
+    fragmentShader: sparksFragmentShader,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    uniforms: {
+      uTime: new Uniform(0),
+      uProgress: new Uniform(0),
+      // uErosionTimeFactor: new Uniform(options.erosionTimeFactor),
+      uNoiseTexture: new Uniform(null),
+      // uVertexNoiseTexture: new Uniform(null),
+      // uVertexOffsetStrength: new Uniform(options.vertexOffsetStrength),
+      // uErosionTexture: new Uniform(null),
+      // uColor1: new Uniform(new Color(options.color1)),
+      // uColor2: new Uniform(new Color(options.color2)),
+    },
+    // visible: false,
+  });
 
   return shaderMaterial;
 }
