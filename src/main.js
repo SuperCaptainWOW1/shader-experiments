@@ -188,7 +188,7 @@ async function start() {
   scene.add(sparksPlane);
 
   explosionPlane = new Mesh(
-    new PlaneGeometry(0.3, 0.3).translate(0.02, 0, 0),
+    new PlaneGeometry(0.35, 0.35).translate(0.02, 0, 0),
     sparksExplosionMaterial,
   );
   explosionPlane.lookAt(camera.position);
