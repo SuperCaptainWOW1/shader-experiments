@@ -1,4 +1,6 @@
 uniform float uProgress;
+uniform float uSoftnessFactor;
+uniform vec3 uColor;
 uniform sampler2D uNoiseTexture;
 in vec2 vUv;
 
@@ -32,7 +34,7 @@ float getRay(
   float tiltDeg
 ) {
   float rayProgress = getRayProgress(distFromCenter, fromDist, toDist);
-  float angleMask = getTiltedAngleMask(angleDeg, fromDeg, toDeg, softness, tiltDeg, rayProgress);
+  float angleMask = getTiltedAngleMask(angleDeg, fromDeg, toDeg, softness * uSoftnessFactor, tiltDeg, rayProgress);
   float distanceMask = step(fromDist, distFromCenter) * step(distFromCenter, toDist);
   float fade = 1.0 - smoothstep(fromDist, toDist, distFromCenter);
   return angleMask * distanceMask * textureMask * fade;
@@ -42,7 +44,7 @@ void main() {
   vec2 centeredUv = vUv * 2.0 - 1.0;
   float distFromCenter = length(centeredUv);
 
-  vec3 color = vec3(1.0, 0.4, 0.0);
+  vec3 color = uColor;
 
   float angleRad = atan(centeredUv.y, centeredUv.x); // -PI..PI
   float angleDeg = degrees(angleRad);                // -180..180

@@ -1,8 +1,6 @@
 import "./style.css";
 import {
   AdditiveBlending,
-  CircleGeometry,
-  ClampToEdgeWrapping,
   Color,
   Mesh,
   PerspectiveCamera,
@@ -10,7 +8,6 @@ import {
   RepeatWrapping,
   Scene,
   ShaderMaterial,
-  SphereGeometry,
   SRGBColorSpace,
   TextureLoader,
   Timer,
@@ -508,24 +505,13 @@ async function getSmokeMaterial() {
 
 async function getExplosionPlaneMaterial() {
   const options = {
-    color1: "#6b0503",
-    color2: "#ffcb00",
-    vertexOffsetStrength: 1.5,
-    erosionTimeFactor: new Vector2(),
-    vertexOffsetTexture: "perlin23.png",
-    noiseTexture: "milky10.png",
-    erosionTexture: "perlin23.png",
+    color: "#E99446",
+    softnessFactor: 1,
   };
 
   getNoiseTexture("spark3.png").then(
     (texture) => (shaderMaterial.uniforms.uNoiseTexture.value = texture),
   );
-  // getNoiseTexture("perlin23.png").then(
-  //   (texture) => (shaderMaterial.uniforms.uVertexNoiseTexture.value = texture),
-  // );
-  // getNoiseTexture("perlin23.png").then(
-  //   (texture) => (shaderMaterial.uniforms.uErosionTexture.value = texture),
-  // );
 
   const shaderMaterial = new ShaderMaterial({
     vertexShader: sparksVertexShader,
@@ -536,15 +522,24 @@ async function getExplosionPlaneMaterial() {
     uniforms: {
       uTime: new Uniform(0),
       uProgress: new Uniform(0),
-      // uErosionTimeFactor: new Uniform(options.erosionTimeFactor),
+      uColor: new Uniform(new Color(options.color)),
       uNoiseTexture: new Uniform(null),
-      // uVertexNoiseTexture: new Uniform(null),
-      // uVertexOffsetStrength: new Uniform(options.vertexOffsetStrength),
-      // uErosionTexture: new Uniform(null),
-      // uColor1: new Uniform(new Color(options.color1)),
-      // uColor2: new Uniform(new Color(options.color2)),
+      uSoftnessFactor: new Uniform(options.softnessFactor),
     },
-    // visible: false,
+  });
+
+  const sparksFolder = gui.addFolder({
+    title: "Sparks shader",
+  });
+
+  sparksFolder.addBinding(options, "color").on("change", () => {
+    shaderMaterial.uniforms.uColor.value = new Color(options.color);
+  });
+  sparksFolder.addBinding(options, "softnessFactor", {
+    min: 0,
+    max: 30
+  }).on("change", () => {
+    shaderMaterial.uniforms.uSoftnessFactor.value = options.softnessFactor;
   });
 
   return shaderMaterial;
