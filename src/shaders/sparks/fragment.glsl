@@ -303,4 +303,7 @@ void main() {
   alpha = clamp(alpha, 0.0, 1.0);
 
   gl_FragColor = vec4(color * alpha, alpha);
+  
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }

@@ -28,6 +28,9 @@ import explosionPlaneFragmentShader from "./shaders/explosion-plane/fragment.gls
 import sparksVertexShader from "./shaders/sparks/vertex.glsl";
 import sparksFragmentShader from "./shaders/sparks/fragment.glsl";
 
+import sparksExplosionVertexShader from "./shaders/sparks-explosion/vertex.glsl";
+import sparksExplosionFragmentShader from "./shaders/sparks-explosion/fragment.glsl";
+
 import smokeVertexShader from "./shaders/smoke/vertex.glsl";
 import smokeFragmentShader from "./shaders/smoke/fragment.glsl";
 
@@ -114,7 +117,7 @@ const arcOptions = [
 
 const textureLoader = new TextureLoader();
 
-let smokePlane, explosionPlane;
+let explosionPlane, sparksPlane;
 
 async function start() {
   const renderer = new WebGLRenderer({
@@ -158,17 +161,17 @@ async function start() {
     controls.enabled = generalOptions.controlsEnabled;
   });
 
-  const explosionShaderMaterial = await getExplosionPlaneMaterial();
-  // const smokeShaderMaterial = await getSmokeMaterial();
+  const sparksShaderMaterial = await geSparksMaterial();
+  const sparksExplosionMaterial = await geSparksExplosionMaterial();
 
   renderer.setAnimationLoop((t) => {
     timer.update(t);
     controls.update(t);
 
-    explosionShaderMaterial.uniforms.uTime.value = timer.getElapsed();
-    explosionShaderMaterial.needsUpdate = true;
-    // smokeShaderMaterial.uniforms.uTime.value = timer.getElapsed();
-    // smokeShaderMaterial.needsUpdate = true;
+    sparksShaderMaterial.uniforms.uTime.value = timer.getElapsed();
+    sparksShaderMaterial.needsUpdate = true;
+    sparksExplosionMaterial.uniforms.uTime.value = timer.getElapsed();
+    sparksExplosionMaterial.needsUpdate = true;
 
     renderer.render(scene, camera);
   });
@@ -180,19 +183,21 @@ async function start() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  explosionPlane = new Mesh(new PlaneGeometry(), explosionShaderMaterial);
+  sparksPlane = new Mesh(new PlaneGeometry(), sparksShaderMaterial);
+  sparksPlane.lookAt(camera.position);
+  scene.add(sparksPlane);
+
+  explosionPlane = new Mesh(
+    new PlaneGeometry(0.3, 0.3).translate(0.02, 0, 0),
+    sparksExplosionMaterial,
+  );
   explosionPlane.lookAt(camera.position);
   scene.add(explosionPlane);
 
-  // smokePlane = new Mesh(new PlaneGeometry(1, 1), smokeShaderMaterial);
-  // smokePlane.lookAt(camera.position);
-  // smokePlane.scale.setScalar(generalOptions.smokeScale);
-  // scene.add(smokePlane);
-
   const tween = gsap.fromTo(
     [
-      explosionShaderMaterial.uniforms.uProgress,
-      // smokeShaderMaterial.uniforms.uProgress,
+      sparksShaderMaterial.uniforms.uProgress,
+      sparksExplosionMaterial.uniforms.uProgress,
     ],
     {
       value: 0,
@@ -204,10 +209,12 @@ async function start() {
       duration: generalOptions.duration,
 
       onStart: () => {
-        explosionShaderMaterial.visible = true;
+        sparksShaderMaterial.visible = true;
+        sparksExplosionMaterial.visible = true;
       },
       onComplete: () => {
-        explosionShaderMaterial.visible = false;
+        sparksShaderMaterial.visible = false;
+        sparksExplosionMaterial.visible = false;
       },
     },
   );
@@ -418,7 +425,7 @@ async function getSmokeMaterial() {
       step: 0.01,
     })
     .on("change", () => {
-      smokePlane.scale.setScalar(options.scale);
+      explosionPlane.scale.setScalar(options.scale);
     });
 
   const syncArcUniforms = (i) => {
@@ -503,9 +510,9 @@ async function getSmokeMaterial() {
   return shaderMaterial;
 }
 
-async function getExplosionPlaneMaterial() {
+async function geSparksMaterial() {
   const options = {
-    color: "#E99446",
+    color: "#e97646",
     softnessFactor: 1,
   };
 
@@ -535,11 +542,34 @@ async function getExplosionPlaneMaterial() {
   sparksFolder.addBinding(options, "color").on("change", () => {
     shaderMaterial.uniforms.uColor.value = new Color(options.color);
   });
-  sparksFolder.addBinding(options, "softnessFactor", {
-    min: 0,
-    max: 30
-  }).on("change", () => {
-    shaderMaterial.uniforms.uSoftnessFactor.value = options.softnessFactor;
+  sparksFolder
+    .addBinding(options, "softnessFactor", {
+      min: 0,
+      max: 30,
+    })
+    .on("change", () => {
+      shaderMaterial.uniforms.uSoftnessFactor.value = options.softnessFactor;
+    });
+
+  return shaderMaterial;
+}
+
+async function geSparksExplosionMaterial() {
+  getNoiseTexture("flipbookExplosion4.png").then(
+    (texture) => (shaderMaterial.uniforms.uAtlas.value = texture),
+  );
+
+  const shaderMaterial = new ShaderMaterial({
+    vertexShader: sparksExplosionVertexShader,
+    fragmentShader: sparksExplosionFragmentShader,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    uniforms: {
+      uTime: new Uniform(0),
+      uProgress: new Uniform(0),
+      uAtlas: new Uniform(null),
+    },
   });
 
   return shaderMaterial;
