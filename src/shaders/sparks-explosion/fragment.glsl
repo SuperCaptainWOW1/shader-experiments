@@ -1,6 +1,7 @@
 uniform sampler2D uAtlas;
 uniform float uTime;
 uniform float uProgress;
+uniform vec3 uColor;
 
 in vec2 vUv;
 
@@ -24,7 +25,7 @@ void main() {
 
   vec4 tex = texture2D(uAtlas, atlasUv);
 
-  gl_FragColor = vec4(vec3(tex), tex.r);
+  gl_FragColor = vec4(vec3(tex) * uColor, tex.r);
 
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

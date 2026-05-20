@@ -555,6 +555,10 @@ async function geSparksMaterial() {
 }
 
 async function geSparksExplosionMaterial() {
+  const options = {
+    color: "#ffffff",
+  };
+
   getNoiseTexture("flipbookExplosion4.png").then(
     (texture) => (shaderMaterial.uniforms.uAtlas.value = texture),
   );
@@ -569,7 +573,16 @@ async function geSparksExplosionMaterial() {
       uTime: new Uniform(0),
       uProgress: new Uniform(0),
       uAtlas: new Uniform(null),
+      uColor: new Uniform(new Color(options.color)),
     },
+  });
+
+  const explosionFolder = gui.addFolder({
+    title: "Explosion shader",
+  });
+
+  explosionFolder.addBinding(options, "color").on("change", () => {
+    shaderMaterial.uniforms.uColor.value = new Color(options.color);
   });
 
   return shaderMaterial;
