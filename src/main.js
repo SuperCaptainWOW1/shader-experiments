@@ -514,6 +514,7 @@ async function geSparksMaterial() {
   const options = {
     color: "#e97646",
     softnessFactor: 8,
+    fromDistFactor: 0.95
   };
 
   getNoiseTexture("spark3.png").then(
@@ -532,6 +533,7 @@ async function geSparksMaterial() {
       uColor: new Uniform(new Color(options.color)),
       uNoiseTexture: new Uniform(null),
       uSoftnessFactor: new Uniform(options.softnessFactor),
+      uFromDistFactor: new Uniform(options.fromDistFactor),
     },
   });
 
@@ -550,6 +552,15 @@ async function geSparksMaterial() {
     .on("change", () => {
       shaderMaterial.uniforms.uSoftnessFactor.value = options.softnessFactor;
     });
+    sparksFolder
+    .addBinding(options, "fromDistFactor", {
+      min: 0,
+      max: 1.2,
+    })
+    .on("change", () => {
+      shaderMaterial.uniforms.uFromDistFactor.value = options.fromDistFactor;
+    });
+
 
   return shaderMaterial;
 }
