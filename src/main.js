@@ -513,7 +513,7 @@ async function getSmokeMaterial() {
 async function geSparksMaterial() {
   const options = {
     color: "#e97646",
-    softnessFactor: 1,
+    softnessFactor: 8,
   };
 
   getNoiseTexture("spark3.png").then(
